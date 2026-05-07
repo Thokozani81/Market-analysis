@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Market Analyst" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#080c14" />
+  <title>Market Analyst AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080c14;
+      --surface: #0d1422;
+      --surface2: #111a2a;
+      --border: #1a2535;
+      --border2: #253045;
+      --text: #c8d8e8;
+      --text-dim: #8a9fb8;
+      --text-muted: #4a6080;
+      --text-bright: #e8f0f8;
+      --accent: #f4c542;
+      --accent2: #ff9a3c;
+      --blue: #7eb8f7;
+      --green: #00d68f;
+      --red: #ff4d6d;
+      --red2: #ff6b6b;
+      --font: 'IBM Plex Mono', 'Courier New', monospace;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+    }
+
+    html { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100%;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* HEADER */
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8,12,20,0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .logo-title { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: var(--accent); }
+    .logo-sub { font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em; margin-top: 2px; }
+    .status { display: flex; gap: 5px; align-items: center; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    .status-text { font-size: 9px; color: var(--green); letter-spacing: 0.08em; }
+
+    /* MAIN */
+    .main { padding: 20px 16px 100px; max-width: 640px; margin: 0 auto; }
+
+    /* UPLOAD AREA — two big tap targets */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .upload-btn {
+      background: var(--surface);
+      border: 1.5px dashed var(--border2);
+      border-radius: 12px;
+      padding: 24px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-user-select: none;
+      user-select: none;
+      active-opacity: 0.7;
+    }
+    .upload-btn:active { transform: scale(0.97); border-color: var(--accent); background: rgba(244,197,66,0.05); }
+    .upload-btn-icon { font-size: 28px; }
+    .upload-btn-label { font-size: 10px; color: var(--blue); letter-spacing: 0.1em; font-weight: 600; text-align: center; }
+    .upload-btn-sub { font-size: 9px; color: var(--text-muted); text-align: center; }
+
+    /* PREVIEW */
+    .preview-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .preview-box.show { display: block; }
+    .preview-img { width: 100%; max-height: 280px; object-fit: contain; display: block; background: #060a10; }
+    .preview-actions {
+      display: flex;
+      border-top: 1px solid var(--border);
+    }
+    .preview-action-btn {
+      flex: 1;
+      padding: 12px;
+      background: transparent;
+      border: none;
+      font-family: var(--font);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .preview-action-btn:active { background: rgba(255,255,255,0.04); }
+    .preview-action-btn.replace { color: var(--blue); border-right: 1px solid var(--border); }
+    .preview-action-btn.clear { color: var(--red2); }
+
+    /* NOTE INPUT */
+    .section-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.1em; margin-bottom: 6px; }
+    .note-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+      outline: none;
+      margin-bottom: 14px;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.15s;
+    }
+    .note-input:focus { border-color: var(--border2); }
+    .note-input::placeholder { color: #2a3a50; }
+
+    /* ANALYZE BUTTON — big tap target */
+    .analyze-btn {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 56px;
+      -webkit-appearance: none;
+    }
+    .analyze-btn.ready {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: var(--bg);
+    }
+    .analyze-btn.ready:active { transform: scale(0.98); opacity: 0.9; }
+    .analyze-btn.loading {
+      background: var(--surface2);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+    .spinner { animation: spin 1s linear infinite; display: inline-block; font-size: 16px; }
+
+    /* LOADING PULSE */
+    .loading-dots {
+      display: flex; gap: 6px; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; background: var(--accent2); }
+    .dot:nth-child(3) { animation-delay: 0.4s; background: var(--blue); }
+
+    /* ERROR */
+    .error-box {
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: rgba(255,77,109,0.08);
+      border: 1px solid rgba(255,77,109,0.25);
+      border-radius: 10px;
+      color: var(--red);
+      font-size: 12px;
+      line-height: 1.6;
+      display: none;
+    }
+    .error-box.show { display: block; }
+
+    /* ANALYSIS CARD */
+    .analysis-card {
+      margin-top: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: none;
+      animation: fadeUp 0.3s ease;
+    }
+    .analysis-card.show { display: block; }
+
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface2);
+    }
+    .card-bar { width: 3px; height: 18px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+    .card-title { font-size: 10px; color: var(--accent); letter-spacing: 0.15em; font-weight: 700; }
+    .card-time { margin-left: auto; font-size: 9px; color: var(--text-muted); }
+
+    .card-body {
+      padding: 18px;
+      font-size: 12.5px;
+      line-height: 1.9;
+      overflow-x: auto;
+    }
+
+    /* Analysis line styles */
+    .aline { margin-bottom: 3px; }
+    .aline.head { margin-top: 14px; margin-bottom: 5px; color: var(--text-bright); font-weight: 700; }
+    .aline.entry { border-left: 2px solid var(--accent); padding-left: 10px; color: var(--text-dim); }
+    .aline.sl    { border-left: 2px solid var(--red2); padding-left: 10px; color: var(--text-dim); }
+    .aline.tp    { border-left: 2px solid var(--green); padding-left: 10px; color: var(--text-dim); }
+    .aline.conf  { border-left: 2px solid var(--blue); padding-left: 10px; color: var(--text-dim); }
+    .aline.risk  { border-left: 2px solid var(--accent2); padding-left: 10px; color: var(--text-dim); }
+    .aline.plain { color: var(--text-dim); }
+    .aline strong { color: var(--text-bright); }
+    .aline code { background: var(--border); padding: 1px 5px; border-radius: 3px; color: var(--accent); font-size: 11px; }
+
+    .disclaimer {
+      margin: 0;
+      padding: 12px 18px;
+      background: rgba(255,154,60,0.04);
+      border-top: 1px solid rgba(255,154,60,0.12);
+      font-size: 9px;
+      color: #5a6a7a;
+      letter-spacing: 0.04em;
+      line-height: 1.6;
+    }
+
+    /* BOTTOM CTA */
+    .reset-btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 15px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all 0.15s;
+      min-height: 50px;
+    }
+    .reset-btn:active { background: var(--surface2); }
+
+    /* HIDDEN INPUTS */
+    #fileCamera, #fileGallery { display: none; }
+
+    /* Sections toggle */
+    .input-section { display: none; }
+    .input-section.show { display: block; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes dotPulse { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    /* Ensure text is readable on small phones */
+    @media (max-width: 380px) {
+      .card-body { font-size: 11.5px; padding: 14px; }
+      .upload-btn { padding: 20px 10px; }
+      .upload-btn-icon { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-icon">📈</div>
+    <div>
+      <div class="logo-title">MARKET ANALYST AI</div>
+      <div class="logo-sub">CHART ANALYSIS ENGINE v2.0</div>
+    </div>
+  </div>
+  <div class="status">
+    <div class="status-dot"></div>
+    <span class="status-text">ONLINE</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- UPLOAD BUTTONS -->
+  <div id="uploadGrid" class="upload-grid">
+    <div class="upload-btn" id="cameraBtn">
+      <div class="upload-btn-icon">📷</div>
+      <div class="upload-btn-label">TAKE PHOTO</div>
+      <div class="upload-btn-sub">Use camera</div>
+    </div>
+    <div class="upload-btn" id="galleryBtn">
+      <div class="upload-btn-icon">🖼️</div>
+      <div class="upload-btn-label">FROM GALLERY</div>
+      <div class="upload-btn-sub">Screenshot / saved</div>
+    </div>
+  </div>
+
+  <!-- Hidden file inputs -->
+  <input type="file" id="fileCamera" accept="image/*" capture="environment" />
+  <input type="file" id="fileGallery" accept="image/*" />
+
+  <!-- CHART PREVIEW -->
+  <div class="preview-box" id="previewBox">
+    <img class="preview-img" id="chartImg" src="" alt="Chart" />
+    <div class="preview-actions">
+      <button class="preview-action-btn replace" id="replaceBtn">↺ REPLACE</button>
+      <button class="preview-action-btn clear" id="clearBtn">✕ CLEAR</button>
+    </div>
+  </div>
+
+  <!-- NOTE + BUTTON (shown after image selected) -->
+  <div class="input-section" id="inputSection">
+    <div class="section-label">ADDITIONAL CONTEXT (OPTIONAL)</div>
+    <input
+      type="text"
+      class="note-input"
+      id="noteInput"
+      placeholder="e.g. AUD/NZD 5M, looking for short..."
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+    />
+    <button class="analyze-btn ready" id="analyzeBtn">
+      ▶&nbsp; ANALYZE CHART
+    </button>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- ANALYSIS OUTPUT -->
+  <div class="analysis-card" id="analysisCard">
+    <div class="card-header">
+      <div class="card-bar"></div>
+      <div class="card-title">ANALYSIS REPORT</div>
+      <div class="card-time" id="analysisTime"></div>
+    </div>
+    <div class="card-body" id="analysisBody"></div>
+    <div class="disclaimer">
+      ⚠ For educational purposes only. Not financial advice. Always manage risk carefully.
+    </div>
+  </div>
+
+  <!-- RESET -->
+  <button class="reset-btn" id="resetBtn" style="display:none">
+    ↺&nbsp; ANALYZE NEW CHART
+  </button>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are an elite professional market analyst and trader with 20+ years of experience in technical analysis across forex, crypto, stocks, and commodities.
+
+When given a chart image, analyze it thoroughly and provide:
+
+1. **Market Context** - What asset, timeframe (if visible), and current trend direction
+2. **Key Levels** - Support and resistance zones visible on the chart
+3. **Technical Analysis** - Pattern recognition (head & shoulders, flags, wedges, channels, etc.), key indicators visible (MA, RSI, MACD, Bollinger Bands, etc.)
+4. **Trade Setups** - Give 1-2 high-probability trade setups:
+   - Direction (LONG/SHORT)
+   - Entry Price/Zone
+   - Stop Loss (with reasoning)
+   - Take Profit 1 (conservative)
+   - Take Profit 2 (extended)
+   - Risk:Reward ratio
+5. **Confidence Level** - Rate your confidence 1-10 and explain why
+6. **Risk Warning** - Brief note on what would invalidate this setup
+
+Format your response with clear headers and be specific with price levels when visible. If price levels aren't visible, describe zones in relative terms.
+
+Be direct, professional, and actionable. Think like a prop trader managing real capital.`;
+
+let imageBase64 = null;
+let imageType = null;
+
+// Elements
+const cameraBtn    = document.getElementById('cameraBtn');
+const galleryBtn   = document.getElementById('galleryBtn');
+const fileCamera   = document.getElementById('fileCamera');
+const fileGallery  = document.getElementById('fileGallery');
+const previewBox   = document.getElementById('previewBox');
+const chartImg     = document.getElementById('chartImg');
+const inputSection = document.getElementById('inputSection');
+const noteInput    = document.getElementById('noteInput');
+const analyzeBtn   = document.getElementById('analyzeBtn');
+const errorBox     = document.getElementById('errorBox');
+const analysisCard = document.getElementById('analysisCard');
+const analysisBody = document.getElementById('analysisBody');
+const analysisTime = document.getElementById('analysisTime');
+const replaceBtn   = document.getElementById('replaceBtn');
+const clearBtn     = document.getElementById('clearBtn');
+const resetBtn     = document.getElementById('resetBtn');
+const uploadGrid   = document.getElementById('uploadGrid');
+
+// Tap targets
+cameraBtn.addEventListener('click', () => fileCamera.click());
+galleryBtn.addEventListener('click', () => fileGallery.click());
+fileCamera.addEventListener('change', e => processFile(e.target.files[0]));
+fileGallery.addEventListener('change', e => processFile(e.target.files[0]));
+replaceBtn.addEventListener('click', () => fileGallery.click());
+clearBtn.addEventListener('click', reset);
+resetBtn.addEventListener('click', reset);
+
+function processFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    showError('Please select an image file.');
+    return;
+  }
+  hideError();
+  analysisCard.classList.remove('show');
+  resetBtn.style.display = 'none';
+  imageType = file.type;
+
+  const url = URL.createObjectURL(file);
+  chartImg.src = url;
+  previewBox.classList.add('show');
+  uploadGrid.style.display = 'none';
+  inputSection.classList.add('show');
+
+  const reader = new FileReader();
+  reader.onload = e => { imageBase64 = e.target.result.split(',')[1]; };
+  reader.readAsDataURL(file);
+}
+
+function reset() {
+  imageBase64 = null;
+  imageType = null;
+  chartImg.src = '';
+  noteInput.value = '';
+  previewBox.classList.remove('show');
+  uploadGrid.style.display = 'grid';
+  inputSection.classList.remove('show');
+  analysisCard.classList.remove('show');
+  resetBtn.style.display = 'none';
+  hideError();
+  fileCamera.value = '';
+  fileGallery.value = '';
+}
+
+function showError(msg) {
+  errorBox.textContent = '⚠ ' + msg;
+  errorBox.classList.add('show');
+}
+function hideError() { errorBox.classList.remove('show'); }
+
+function getLineClass(text) {
+  const t = text.toLowerCase();
+  if (/^\*\*/.test(text) || /^#+\s/.test(text)) return 'head';
+  if (t.includes('entry') || (t.includes('long') && !t.includes('short'))) return 'entry';
+  if (t.includes('stop loss') || t.includes(' sl ') || /\bsl\b/.test(t)) return 'sl';
+  if (t.includes('take profit') || t.includes(' tp') || /\btp\d?\b/.test(t)) return 'tp';
+  if (t.includes('confidence')) return 'conf';
+  if (t.includes('risk') || t.includes('invalidat') || t.includes('short')) return 'risk';
+  return 'plain';
+}
+
+function renderAnalysis(text) {
+  analysisBody.innerHTML = '';
+  const lines = text.split('\n');
+  lines.forEach(line => {
+    if (!line.trim()) {
+      const sp = document.createElement('div');
+      sp.style.height = '8px';
+      analysisBody.appendChild(sp);
+      return;
+    }
+    const div = document.createElement('div');
+    div.className = 'aline ' + getLineClass(line);
+    let html = line
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>');
+    div.innerHTML = html;
+    analysisBody.appendChild(div);
+  });
+}
+
+analyzeBtn.addEventListener('click', async () => {
+  if (!imageBase64) return;
+  hideError();
+
+  // Set loading state
+  analyzeBtn.classList.remove('ready');
+  analyzeBtn.classList.add('loading');
+  analyzeBtn.innerHTML = '<span class="spinner">⟳</span> ANALYZING...';
+  analyzeBtn.disabled = true;
+  analysisCard.classList.remove('show');
+  resetBtn.style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: imageType || 'image/png', data: imageBase64 } },
+            { type: 'text', text: noteInput.value.trim()
+                ? `Analyze this chart. Trader's note: "${noteInput.value.trim()}"`
+                : 'Analyze this chart and provide trade setups.' }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `Error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = (data.content || []).find(b => b.type === 'text')?.text || '';
+    if (!text) throw new Error('No analysis returned.');
+
+    analysisTime.textContent = new Date().toLocaleTimeString();
+    renderAnalysis(text);
+    analysisCard.classList.add('show');
+    resetBtn.style.display = 'block';
+
+    setTimeout(() => {
+      analysisCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+
+  } catch (err) {
+    showError('Analysis failed: ' + (err.message || 'Please try again.'));
+  } finally {
+    analyzeBtn.classList.add('ready');
+    analyzeBtn.classList.remove('loading');
+    analyzeBtn.innerHTML = '▶&nbsp; ANALYZE CHART';
+    analyzeBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
